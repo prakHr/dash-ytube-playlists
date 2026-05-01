@@ -1,8 +1,22 @@
-from dash import Dash, dcc, html, Input, Output, State, callback
+from dash import Dash, dcc, html, Input, Output, State, ALL, ctx
 import dash_player
-from dash.dependencies import Input, Output
+import json
+import os
 
-app = Dash()
+app = Dash(__name__)
+
+FILE_PATH = "saved_urls.json"
+
+# --- file helpers ---
+def load_urls():
+    if os.path.exists(FILE_PATH):
+        with open(FILE_PATH, "r") as f:
+            return json.load(f)
+    return []
+
+def save_urls(urls):
+    with open(FILE_PATH, "w") as f:
+        json.dump(urls, f, indent=4)
 
 app.layout = html.Div(
     [
@@ -11,92 +25,95 @@ app.layout = html.Div(
             type='text',
             placeholder='Type yt video id & See the latest video...',
             value='',
-            style = {"width":"33%","color":"red",'textAlign': 'center',"margin-left":"33%"}
+            style={"width":"33%","color":"red",'textAlign': 'center',"margin-left":"33%"}
         ),
-        html.Div(
-            [
-                html.Div(
-                    style={"width": "33%", "height":"100%", "padding": "10px"},
-                    children=[],
-                    id = "yt-div",
-                ),
-            ],
-            style={
-                "display": "flex",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
-            },
-        ),
+
+        html.Div(id="yt-div"),
+
         dcc.Input(
             id='my-playlist-input',
             type='text',
-            placeholder='Type yt video id  & See the latest videos with extended playlist options...',
+            placeholder='Add playlist videos...',
             value='',
-            style = {"width":"33%","color":"gold",'textAlign': 'center',"margin-left":"33%"}
+            style={"width":"33%","color":"gold",'textAlign': 'center',"margin-left":"33%"}
         ),
-        html.Div(
-            [
-                html.Div(
-                    style={"width": "33%", "height":"100%", "padding": "10px"},
-                    children=[],
-                    id = "yt-extended-div",
-                ),
-            ],
-            style={
-                "display": "flex",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
-            },
-        ),
+
+        html.Div(id="yt-extended-div"),
     ]
 )
 
+# --- SINGLE VIDEO ---
 @app.callback(
     Output('yt-div', 'children'),
     Input('my-input', 'value'),
-    prevent_initial_call=True 
+    prevent_initial_call=True
 )
-def update_output(value):
-    try:
-        children = [
+def update_single(value):
+    if not value:
+        return []
+
+    return [
+        html.Div([
             dash_player.DashPlayer(
-                id=f"{value}",
                 url=f"https://youtu.be/{value}",
                 controls=True,
-            ),
-        ]
-        return children
-    except Exception as e:
-        children = [f"{e}"]
-        return children
+            )
+        ])
+    ]
 
 
-
+# --- PLAYLIST (WITH SAVE BUTTON PER CHILD) ---
 @app.callback(
     Output('yt-extended-div', 'children'),
     Input('my-playlist-input', 'value'),
-    Input('yt-extended-div', 'children'),
-    prevent_initial_call=True 
+    State('yt-extended-div', 'children'),
+    prevent_initial_call=True
 )
-def update_output(value,children):
-    if value=="" or value is None:
-        small_children = []
-        children+=small_children
+def update_playlist(value, children):
+    if children is None:
+        children = []
+
+    if not value:
         return children
-    try:
-        small_children = [
+
+    children.append(
+        html.Div([
             dash_player.DashPlayer(
-                id=f"{value}",
                 url=f"https://youtu.be/{value}",
                 controls=True,
             ),
-        ]
-        children+=small_children
-        return children
-    except Exception as e:
-        small_children = []
-        children+=small_children
-        return children
+            html.Button(
+                "💾 Save",
+                id={"type": "save-btn", "index": value},
+                n_clicks=0
+            )
+        ])
+    )
+
+    return children
+
+
+# --- SAVE WHEN ANY PLAYLIST BUTTON CLICKED ---
+@app.callback(
+    Output('my-input', 'placeholder'),  # dummy output (required)
+    Input({"type": "save-btn", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True
+)
+def save_from_playlist(n_clicks):
+    if not ctx.triggered:
+        return "Type yt video id..."
+
+    video_id = ctx.triggered_id["index"]
+    url = f"https://youtu.be/{video_id}"
+
+    saved = load_urls()
+
+    if url not in saved:
+        saved.append(url)
+        save_urls(saved)
+        #print(f"Saved: {url}")
+
+    return "Saved!"
 
 
 if __name__ == "__main__":
