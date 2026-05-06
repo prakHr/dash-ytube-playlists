@@ -2,8 +2,56 @@ from dash import Dash, dcc, html, Input, Output, State, ALL, ctx
 import dash_player
 import json
 import os
+import dash_mantine_components as dmc
 
 app = Dash(__name__)
+
+pirate_king_message = "Hello I am the man who will king of Pirates!"
+title_message = "Whenever the list of playlists goes long, refresh after finishing your work and start doing work again"
+
+app.layout = dmc.MantineProvider(
+    dmc.Container(
+        size="md",
+        children=dmc.Stack(
+            align="center",
+            gap="xl",
+            children=[
+                dmc.Alert(
+                    title_message,
+                    title=pirate_king_message,
+                    color="violet",
+                ),  
+
+                dmc.TextInput(
+                    id="my-input",
+                    placeholder="Type yt video id & See the latest video...",
+                    value="",
+                    styles={"input": {"color": "red", "textAlign": "center"}},
+                    w="100%"
+                ),
+
+                
+                html.Div(id="yt-div"),
+
+                dmc.Space(h=40),
+
+                dmc.TextInput(
+                    id="my-playlist-input",
+                    placeholder="Add playlist videos (After Entering utube id press Enter)...",
+                    value="",
+                    styles={"input": {"color": "gold", "textAlign": "center"}},
+                    w="100%"
+                ),
+
+                dmc.Space(h=40),
+
+                html.Div(id="yt-extended-div"),
+
+                dmc.Space(h=20),
+            ]
+        )
+    )
+)
 
 FILE_PATH = "saved_urls.json"
 
@@ -18,37 +66,45 @@ def save_urls(urls):
     with open(FILE_PATH, "w") as f:
         json.dump(urls, f, indent=4)
 
-app.layout = html.Div(
-    [
-        dcc.Input(
-            id='my-input',
-            type='text',
-            placeholder='Type yt video id & See the latest video...',
-            value='',
-            style={"width":"33%","color":"red",'textAlign': 'center',"margin-left":"33%"}
-        ),
 
-        html.Br(), html.Br(), html.Br(), html.Br(),
+# app.layout = dmc.MantineProvider(
+    
+    
+#     html.Div(
+#     [
+        
+#         dcc.Input(
+#             id='my-input',
+#             type='text',
+#             placeholder='Type yt video id & See the latest video...',
+#             value='',
+#             style={"width":"33%","color":"red",'textAlign': 'center',"margin-left":"33%"}
+#         ),
 
-        html.Div(id="yt-div"),
+#         html.Br(), html.Br(), html.Br(), html.Br(),
 
-        html.Br(), html.Br(), html.Br(), html.Br(),
+#         html.Div(id="yt-div"),
 
-        dcc.Input(
-            id='my-playlist-input',
-            type='text',
-            placeholder='Add playlist videos (After Entering utube id press Enter)...',
-            value='',
-            style={"width":"33%","color":"gold",'textAlign': 'center',"margin-left":"33%"}
-        ),
+#         html.Br(), html.Br(), html.Br(), html.Br(),
 
-        html.Br(), html.Br(), html.Br(), html.Br(),
+#         dcc.Input(
+#             id='my-playlist-input',
+#             type='text',
+#             placeholder='Add playlist videos (After Entering utube id press Enter)...',
+#             value='',
+#             style={"width":"33%","color":"gold",'textAlign': 'center',"margin-left":"33%"}
+#         ),
 
-        html.Div(id="yt-extended-div"),
-        html.Br(),
-    ]
-)
+#         html.Br(), html.Br(), html.Br(), html.Br(),
 
+#         html.Div(id="yt-extended-div"),
+#         html.Br(),
+
+        
+
+#         ]
+#     )
+# )
 # --- SINGLE VIDEO ---
 @app.callback(
     Output('yt-div', 'children'),
